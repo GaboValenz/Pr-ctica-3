@@ -1,3 +1,101 @@
-Hola
-Hola hola
-eyyy
+---
+title: "TRABAJO FINAL TAPI"
+author: "Ángel Martín-Lagos"
+date: "2024-01-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Librerías
+
+```{r}
+library(haven)
+library(dplyr)
+library(tidyverse)
+```
+
+
+## Apertura de la base de datos
+```{r}
+qog <- read_dta("qog_std_ts_jan23_stata14.dta")
+qog_simple <- readRDS("qog_simple.rds")
+```
+
+
+## Limpieza de variables
+
+Una vez abierto el archivo, procedemos a limpiar las variables que emplearemos en nuestro estudio.
+
+-   **paises_prop**
+
+Comenzamos, en primer lugar, por la variable *paises_prop*. La convertiremos en variable dicotómica que tome los siguientes valores:
+
+-   1 -> cuando el país efectivamente tenga un sistema electoral proporcional.
+-   2 -> cuando el país tenga un sistema electoral de otro tipo.
+
+La creamos de la siguiente manera:
+
+```{r}
+qog <- qog |> 
+  mutate(paises_prop = case_when(iaep_es == 1 ~ 0,
+                                 iaep_es == 3 ~ 1,
+                                 T ~ 0)) |> 
+  mutate(paises_prop = fct_recode(as_factor(paises_prop),
+                                  "Otros sistemas" = "0",
+                                  "Sistema proporcional" = "1"))
+table(qog$paises_prop)
+```
+
+-   **aprob_const**
+
+Esta variable la convertiremos así mismo en variable dicotómica tomando los siguientes valores:
+
+-   1 -> si la aprobación de la constitución se produjo desde la tercera ola democratizadora (1974) hasta la actualidad
+-   0 -> si la constitución se aprobó antes de 1974.
+
+```{r}
+qog <- qog |> 
+  mutate(aprob_const = if_else(iaep_const >= 49, 1, 0)) |> 
+  mutate(aprob_const = fct_recode(as_factor(aprob_const),
+                                  "Antes de 1974" = "0",
+                                  "Después de 1974" = "1"))
+table(qog$aprob_const)
+```
+
+-   **PIB**
+
+Simplemente renombramos la variable gle_cgdpc. Esta variable continua muestra el GDP per cápita según los precios actuales
+
+```{r}
+qog <- qog |> 
+  rename(pib = gle_cgdpc)
+```
+
+-   **Gini**
+
+Al igual que con la variable anterior, únicamente renombramos la variable wdi_gini por gini.
+
+En ella, 0 representa una igualdad perfecta, mientras que un índice de 100 implica absoluta desigualdad.
+
+```{r}
+qog <- qog |> 
+  rename(gini = wdi_gini)
+```
+
+## Reducción del dataset
+
+Voy a crear un dataset únicamente con las variables que vamos a emplear para el análisis de regresión. Para tener una sola observación país filtramos por el año más cercano al presente del que se dispongan datos sobre las variables que nos interesan
+
+```{r}
+myvars <- c("aprob_const", "paises_prop","pib", "gini", "cname", "year") #Hay que incluir todas las variables que vamos a utilizar una vez que las tengamos limpias
+qog_red <- qog[myvars]
+qog_red <- na.omit(qog_red)
+qog_red <- qog_red |> 
+  group_by(cname) |> 
+  slice_max(order_by = year) |> 
+  ungroup()
+```
+
