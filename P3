@@ -84,13 +84,88 @@ En ella, 0 representa una igualdad perfecta, mientras que un índice de 100 impl
 qog <- qog |> 
   rename(gini = wdi_gini)
 ```
+- **fr_etnica**
+
+Renombramos la variable al_ethnic2000 a fr_etnica. Esta variable continua refiere a la medida de la diversidad/heterogeneidad étnica dentro de una población. Cuanto mayor sea la fraccionalización étnica más diversa será la composición étnica de la población.
+
+El índice de probabilidad varía de 0 a 1, donde:
+
+-   un valor de 0 indica ninguna diversidad étnica (homogeneidad)
+
+-   un valor de 1 indica la máxima diversidad étnica (heterogeneidad)
+
+```{r}
+
+qog <- qog %>% 
+  rename(fr_etnica = al_ethnic2000)
+
+```
+
+- **fr_linguistica**
+
+Al igual que la variable previa, la fraccionalización linguística refiere a la medida de diveresidad linguística dentro de una población. Cuanto mayor sea la fraccionalización linguística más diversa será la composición linguística de la población.
+
+El índice de probabilidad varía de 0 a 1, donde:
+
+-   un valor de 0 indica ninguna diversidad linguística (homogeneidad)
+
+-   un valor de 1 indica la máxima diversidad linguística (heterogeneidad)
+
+```{r}
+qog <- qog %>% 
+  rename(fr_linguistica = al_language2000)
+```
+
+- **fr_religion**
+
+La fraccionalización religiosa es una variable continua que mide la diversidad en las afiliaciones religiosas en una población. Cuanto mayor sea el vlaor del índice fraccionalización religiosa, más diversa o fraccionada será la sociedad en términos de composición religiosa.
+
+El índice de probabilidad varía de 0 a 1, donde:
+
+-   un valor de 0 indica ninguna diversidad religiosa
+
+-   un valor de 1 indica la máxima diversidad religiosa
+
+```{r}
+qog <- qog %>% 
+  rename(fr_religion = al_religion2000)
+```
+
+- **pv_sd**
+
+Renombramos la variable cpds_vs. Esta variable continua refiere a la participación de votos de los partidos políticos clasificados como socialdemócratas.
+
+```{r}
+qog <- qog %>% 
+  rename(pv_sd = cpds_vs)
+```
+
+- **nivel_conf**
+
+Renombramos y convertimos la variable en una dicotómica. Esta variable mide el nivel de intensidad de los conflictos sociales, étnicos y religiosos tomando los siguientes valores:
+
+- 1 -> nivel de conflictividad bajo
+- 2 -> nivel de conflictividad medio
+- 3 -> nivel de conflicto alto
+
+
+```{r}
+qog <- qog %>% 
+  mutate(nivel_conf = as_factor(bti_ci)) %>% 
+  mutate(nivel_conf = fct_collapse(nivel_conf,
+                      "1" = 1:3,
+                      "2" = 4:6,
+                      "3" = 7:10)) %>% 
+  mutate(as.numeric(nivel_conf))
+
+```
 
 ## Reducción del dataset
 
 Voy a crear un dataset únicamente con las variables que vamos a emplear para el análisis de regresión. Para tener una sola observación país filtramos por el año más cercano al presente del que se dispongan datos sobre las variables que nos interesan
 
 ```{r}
-myvars <- c("aprob_const", "paises_prop","pib", "gini", "cname", "year") #Hay que incluir todas las variables que vamos a utilizar una vez que las tengamos limpias
+myvars <- c("aprob_const", "paises_prop","pib", "gini", "cname", "year", "fr_etnico", "fr_linguistica", "fr_religion", "pv_sd", "nivel_conf") #Hay que incluir todas las variables que vamos a utilizar una vez que las tengamos limpias
 qog_red <- qog[myvars]
 qog_red <- na.omit(qog_red)
 qog_red <- qog_red |> 
