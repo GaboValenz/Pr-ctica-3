@@ -2,87 +2,104 @@
 title: "TRABAJO FINAL TAPI"
 author: "Ángel Martín-Lagos"
 date: "2024-01-11"
-output: html_document
+output:
+  html_document:
+    theme: cerulean
+    toc: yes
 ---
 
+<style>
+body {
+text-align: justify}
+</style> 
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 ```
 
 ## Librerías
-
 ```{r}
 library(haven)
 library(dplyr)
 library(tidyverse)
 ```
-
-
 ## Apertura de la base de datos
 ```{r}
 qog <- read_dta("qog_std_ts_jan23_stata14.dta")
 qog_simple <- readRDS("qog_simple.rds")
 ```
-
-
 ## Limpieza de variables
 
-Una vez abierto el archivo, procedemos a limpiar las variables que emplearemos en nuestro estudio.
-
--   **paises_prop**
-
-Comenzamos, en primer lugar, por la variable *paises_prop*. La convertiremos en variable dicotómica que tome los siguientes valores:
-
--   1 -> cuando el país efectivamente tenga un sistema electoral proporcional.
--   2 -> cuando el país tenga un sistema electoral de otro tipo.
-
-La creamos de la siguiente manera:
+Cogemos la variable **bmr_dem** que se refiere a los países que son democráticos y a los que no. 
 
 ```{r}
 qog <- qog |> 
+  rename(nodemvsdem = bmr_dem) |> 
+  mutate(nodemvsdem = as_factor(nodemvsdem))|>
+  mutate(nodemvsdem = fct_recode(nodemvsdem,
+                                 "No democrático" = "0",
+                                 "Democrático" = "1"))
+  
+qogdem <- qog |> filter(nodemvsdem == "Democrático")
+```
+
+
+Una vez abierto el archivo, procedemos a limpiar las variables que emplearemos en nuestro estudio.
+-   **paises_prop**
+Comenzamos, en primer lugar, por la variable *paises_prop*. La convertiremos en variable dicotómica que tome los siguientes valores:
+-   1 -> cuando el país efectivamente tenga un sistema electoral proporcional.
+-   2 -> cuando el país tenga un sistema electoral de otro tipo.
+La creamos de la siguiente manera:
+
+```{r}
+
+qogdem <- qogdem |> 
   mutate(paises_prop = case_when(iaep_es == 1 ~ 0,
                                  iaep_es == 3 ~ 1,
                                  T ~ 0)) |> 
   mutate(paises_prop = fct_recode(as_factor(paises_prop),
                                   "Otros sistemas" = "0",
                                   "Sistema proporcional" = "1"))
-table(qog$paises_prop)
+summary(qogdem$paises_prop)
+```
+```{r}
+qogdem <- qogdem |> 
+  mutate(paises_prop01 = case_when(iaep_es == 1 ~ 0,
+                                 iaep_es == 3 ~ 1,
+                                 T ~ 0))
+
+summary(qogdem$paises_prop01)
 ```
 
+
 -   **aprob_const**
-
 Esta variable la convertiremos así mismo en variable dicotómica tomando los siguientes valores:
-
 -   1 -> si la aprobación de la constitución se produjo desde la tercera ola democratizadora (1974) hasta la actualidad
 -   0 -> si la constitución se aprobó antes de 1974.
-
 ```{r}
-qog <- qog |> 
+qogdem <- qogdem |> 
   mutate(aprob_const = if_else(iaep_const >= 49, 1, 0)) |> 
   mutate(aprob_const = fct_recode(as_factor(aprob_const),
                                   "Antes de 1974" = "0",
                                   "Después de 1974" = "1"))
-table(qog$aprob_const)
+table(qogdem$aprob_const)
 ```
-
 -   **PIB**
-
 Simplemente renombramos la variable gle_cgdpc. Esta variable continua muestra el GDP per cápita según los precios actuales
-
 ```{r}
-qog <- qog |> 
+qogdem <- qogdem |> 
   rename(pib = gle_cgdpc)
+
+summary(qogdem$pib)
 ```
-
 -   **Gini**
-
 Al igual que con la variable anterior, únicamente renombramos la variable wdi_gini por gini.
-
 En ella, 0 representa una igualdad perfecta, mientras que un índice de 100 implica absoluta desigualdad.
-
 ```{r}
-qog <- qog |> 
+qogdem <- qogdem|> 
   rename(gini = wdi_gini)
+
+summary(qogdem$gini)
 ```
 - **fr_etnica**
 
@@ -96,9 +113,10 @@ El índice de probabilidad varía de 0 a 1, donde:
 
 ```{r}
 
-qog <- qog %>% 
+qogdem <- qogdem %>%
   rename(fr_etnica = al_ethnic2000)
 
+summary(qogdem$fr_etnica)
 ```
 
 - **fr_linguistica**
@@ -112,8 +130,10 @@ El índice de probabilidad varía de 0 a 1, donde:
 -   un valor de 1 indica la máxima diversidad linguística (heterogeneidad)
 
 ```{r}
-qog <- qog %>% 
+qogdem <- qogdem %>% 
   rename(fr_linguistica = al_language2000)
+
+summary(qogdem$fr_linguistica)
 ```
 
 - **fr_religion**
@@ -127,8 +147,10 @@ El índice de probabilidad varía de 0 a 1, donde:
 -   un valor de 1 indica la máxima diversidad religiosa
 
 ```{r}
-qog <- qog %>% 
+qogdem <- qogdem %>% 
   rename(fr_religion = al_religion2000)
+
+summary(qogdem$fr_religion)
 ```
 
 - **pv_sd**
@@ -136,7 +158,7 @@ qog <- qog %>%
 Renombramos la variable cpds_vs. Esta variable continua refiere a la participación de votos de los partidos políticos clasificados como socialdemócratas.
 
 ```{r}
-qog <- qog %>% 
+qogdem <- qogdem %>% 
   rename(pv_sd = cpds_vs)
 ```
 
@@ -150,7 +172,7 @@ Renombramos y convertimos la variable en una dicotómica. Esta variable mide el 
 
 
 ```{r}
-qog <- qog %>% 
+qogdem <- qogdem %>% 
   mutate(nivel_conf = as_factor(bti_ci)) %>% 
   mutate(nivel_conf = fct_collapse(nivel_conf,
                       "1" = 1:3,
@@ -158,19 +180,26 @@ qog <- qog %>%
                       "3" = 7:10)) %>% 
   mutate(as.numeric(nivel_conf))
 
+summary(qogdem$nivel_conf)
 ```
+-   **Número efectivo de partidos electorales**
+```{r}
+qogdem <- qogdem |> 
+  rename(nep = gol_enep)
+
+summary(qogdem$nep)
+```
+
+
 
 ## Reducción del dataset
 
 Voy a crear un dataset únicamente con las variables que vamos a emplear para el análisis de regresión. Para tener una sola observación país filtramos por el año más cercano al presente del que se dispongan datos sobre las variables que nos interesan
 
 ```{r}
-myvars <- c("aprob_const", "paises_prop","pib", "gini", "cname", "year", "fr_etnico", "fr_linguistica", "fr_religion", "pv_sd", "nivel_conf") #Hay que incluir todas las variables que vamos a utilizar una vez que las tengamos limpias
-qog_red <- qog[myvars]
-qog_red <- na.omit(qog_red)
-qog_red <- qog_red |> 
-  group_by(cname) |> 
-  slice_max(order_by = year) |> 
-  ungroup()
+qogdem_red <- qogdem |> 
+  select(c("cname", "year", "aprob_const", "paises_prop01", "nep","fr_etnica", "fr_linguistica", "fr_religion", "pib")) #Hay que incluir todas las variables que vamos a utilizar una vez que las tengamos limpias
+qogdem_red <- na.omit(qogdem_red)
+print(qogdem_red)
 ```
 
