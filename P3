@@ -203,3 +203,8 @@ qogdem_red <- na.omit(qogdem_red)
 print(qogdem_red)
 ```
 
+```{r}
+modelo1 <- lm(paises_prop01 ~ aprob_const +  nep + fr_etnica + fr_linguistica + fr_religion + pib, data = qogdem_red)
+
+summary(modelo1)
+```
