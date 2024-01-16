@@ -23,6 +23,7 @@ library(haven)
 library(dplyr)
 library(tidyverse)
 library(stargazer)
+library(skimr)
 ```
 ## Apertura de la base de datos
 ```{r}
@@ -198,11 +199,17 @@ summary(qogdem$nep)
 Voy a crear un dataset únicamente con las variables que vamos a emplear para el análisis de regresión. Para tener una sola observación país filtramos por el año más cercano al presente del que se dispongan datos sobre las variables que nos interesan
 
 ```{r}
-qogdem_red <- qogdem |> 
+qogdem_red <- qogdem |>
+  #filter(year == "2011")|>
   select(c("cname", "year", "aprob_const", "paises_prop01", "nep","fr_etnica", "fr_linguistica", "fr_religion", "pib")) #Hay que incluir todas las variables que vamos a utilizar una vez que las tengamos limpias
+skim(qogdem_red)
+```
+
+```{r}
 qogdem_red <- na.omit(qogdem_red)
 print(qogdem_red)
 ```
+
 
 ```{r}
 modelo1 <- lm(paises_prop01 ~ aprob_const +  nep + fr_etnica + fr_linguistica + fr_religion + pib, data = qogdem_red)
