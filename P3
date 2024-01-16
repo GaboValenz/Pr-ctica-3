@@ -282,8 +282,6 @@ print(qogdem_red)
 
 
 
-## Modelo de regresión
-
 ```{r}
 modelo1 <- lm(paises_prop01 ~ 
                 nep, 
@@ -308,13 +306,31 @@ modelo3 <- lm(paises_prop01 ~ nep +
 modelo4 <- lm(paises_prop01 ~ nep + aprob_const + camaras + fr_etnica + fr_linguistica + fr_religion + continent, data = qogdem_red)
 ```
 
+```{r}
+modelo5 <- lm(paises_prop01 ~ nep + aprob_const + camaras + fr_etnica * fr_linguistica * fr_religion + continent, data = qogdem_red)
+```
+
+
 
 ```{r}
 stargazer(modelo1,
           modelo2,
           modelo3,
           modelo4,
+          modelo5,
           type = "text",
-          dep.var.labels = c("Modelo 1", "Modelo 2", "Modelo 3", "Modelo 4"),
-          covariate.labels = c("NEPE", "Aprob Constitución después de 1974", "Sistema bicameral", "Fragmentación étnica", "Framentación lingüística", "Fragmentación religiosa", "Asia", "Europa", "Norteamérica", "Oceanía", "Sudamérica"))
+          dep.var.labels = c("Modelo 1", "Modelo 2", "Modelo 3", "Modelo 4", "Modelo 5"),
+          covariate.labels = c("NEPE", 
+                               "Aprob Constitución después de 1974", 
+                               "Sistema bicameral", "Fragmentación étnica",
+                               "Framentación lingüística", "Fragmentación religiosa",
+                               "Asia", 
+                               "Europa", 
+                               "Norteamérica", 
+                               "Oceanía", 
+                               "Sudamérica",
+                               "Fragmentación étnica y lingüística",
+                               "Fragmentación étnica y religiosa",
+                               "Fragmentación lingüística y religiosa",
+                               "Fragnemtación étnica, lingüistica y religiosa"))
 ```
