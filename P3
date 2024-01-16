@@ -1,6 +1,6 @@
 ---
 title: "TRABAJO FINAL TAPI"
-author: "Ángel Martín-Lagos"
+author: "Ángel Martín-Lagos, Alejandro Sáchez, Gabriel Valenzuela"
 date: "2024-01-11"
 output:
   html_document:
@@ -22,6 +22,7 @@ knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 library(haven)
 library(dplyr)
 library(tidyverse)
+library(stargazer)
 ```
 ## Apertura de la base de datos
 ```{r}
