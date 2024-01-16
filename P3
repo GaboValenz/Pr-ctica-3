@@ -272,7 +272,17 @@ qogdem_red <- qogdem_red |>
   left_join(qog_simple,
             by = "cname")
 ```
+Recodificamos la variable continent
 
+```{r}
+qogdem_red <- qogdem_red %>% 
+  mutate(continent = fct_recode(as_factor(continent),  
+                                "Asia" = "Asia",
+                                "Europa" = "Europe",
+                                "Africa" = "Africa",
+                                "Norteamerica" = "North America",
+                                "Sudamerica" = "South America"))
+```
 ## Eliminación de NAs
 
 ```{r}
