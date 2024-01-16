@@ -193,17 +193,87 @@ summary(qogdem$nep)
 ```
 
 
-
-## Reducción del dataset
+## Creación del dataset para el análisis de regresión
 
 Voy a crear un dataset únicamente con las variables que vamos a emplear para el análisis de regresión. Para tener una sola observación país filtramos por el año más cercano al presente del que se dispongan datos sobre las variables que nos interesan
 
 ```{r}
-qogdem_red <- qogdem |>
-  #filter(year == "2011")|>
+qogdem_red <- qogdem |> 
   select(c("cname", "year", "aprob_const", "paises_prop01", "nep","fr_etnica", "fr_linguistica", "fr_religion", "pib")) #Hay que incluir todas las variables que vamos a utilizar una vez que las tengamos limpias
-skim(qogdem_red)
+
 ```
+
+## Unión de dataset
+
+En primer lugar, abrimos el nuevo dataset sistemaelectoral.csv
+
+```{r}
+siselec <- read.csv("sistema_electoral (1).csv")
+```
+
+Este dataset tiene una variable que nos interesa. Esta variable nos informa del tipo de sistema de cámaras que tiene un determinado país. Es decir, nos informa si el sistema electoral de un determinado país es bicameral o unicameral.
+
+Una vez cargada la base de datos, cambiamos la unidad de obsercación del marco de datos de país cámara a país, quedándonos únicamente con el número de cámaras legislativas de cada país.
+
+Como cada país tiene tantas observaciones como cámara legislativas, hacemos lo siguiente
+
+```{r}
+siselec <- siselec |>
+group_by(Country) |>
+summarise(numleg= n())
+```
+
+A continuación, vamos a añadir esta variable a nuestro dataset reducido. En primer lugar, seleccionamos la variable Country como identificador para identificar las obsercaciones que se refieren en cada marco de datos a la misma unidad. En este caso, renombramos la variable Country como cname, variable que nos sirve como identificador.
+
+```{r}
+siselec <- siselec |> 
+  rename(cname = Country)
+qogdem_red$cname <- str_to_lower(qogdem_red$cname, locale = "en")
+siselec$cname <- str_to_lower(siselec$cname, locale = "en")
+```
+
+```{r}
+qogdem_red <- qogdem_red |> 
+  left_join(siselec,
+            by = "cname")
+```
+
+Por último, haremos que esta variable tome valor 0 cuando el sistema tiene solo una cámara y dos cuando el sistema es bicameral
+
+```{r}
+qogdem_red <- qogdem_red |>
+  mutate(camaras = if_else(numleg == 1, 1, 0)) |> 
+  mutate(camaras = fct_recode(as_factor(camaras), 
+                              "Unicameral" = "1", 
+                              "Bicameral" = "0"))
+
+
+```
+
+El mismo procedimiento vamos a seguir para unir a nuestro dataset reducido la variable continent, de la base de datos qog_simple
+
+Como el dataset ya está abierto, procedemos de la siguiente manera:
+
+```{r}
+qog_simple$cname <- str_to_lower(qog_simple$cname, locale = "en") # En primer lugar, pasamos a mínuscula el nombre de los países para que coincidan 
+```
+
+A continuación debemos reducir el dataset solo con las variables country y continent
+
+```{r}
+qog_simple <- qog_simple |> 
+  select(cname, continent)
+```
+
+Incluimos en el dataset reducido la variable continent
+
+```{r}
+qogdem_red <- qogdem_red |> 
+  left_join(qog_simple,
+            by = "cname")
+```
+
+## Eliminación de NAs
 
 ```{r}
 qogdem_red <- na.omit(qogdem_red)
@@ -211,8 +281,40 @@ print(qogdem_red)
 ```
 
 
-```{r}
-modelo1 <- lm(paises_prop01 ~ aprob_const +  nep + fr_etnica + fr_linguistica + fr_religion + pib, data = qogdem_red)
 
-summary(modelo1)
+## Modelo de regresión
+
+```{r}
+modelo1 <- lm(paises_prop01 ~ 
+                nep, 
+              data = qogdem_red)
+```
+```{r}
+modelo2 <- lm(paises_prop01 ~ nep +
+                aprob_const +
+                camaras,
+              data = qogdem_red)
+```
+```{r}
+modelo3 <- lm(paises_prop01 ~ nep + 
+                aprob_const + 
+                camaras + 
+                fr_etnica + 
+                fr_linguistica + 
+                fr_religion, 
+              data = qogdem_red)
+```
+```{r}
+modelo4 <- lm(paises_prop01 ~ nep + aprob_const + camaras + fr_etnica + fr_linguistica + fr_religion + continent, data = qogdem_red)
+```
+
+
+```{r}
+stargazer(modelo1,
+          modelo2,
+          modelo3,
+          modelo4,
+          type = "text",
+          dep.var.labels = c("Modelo 1", "Modelo 2", "Modelo 3", "Modelo 4"),
+          covariate.labels = c("NEPE", "Aprob Constitución después de 1974", "Sistema bicameral", "Fragmentación étnica", "Framentación lingüística", "Fragmentación religiosa", "Asia", "Europa", "Norteamérica", "Oceanía", "Sudamérica"))
 ```
